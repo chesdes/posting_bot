@@ -2,9 +2,17 @@ from aiogram.utils.keyboard import InlineKeyboardBuilder
 from app.utils import get_channels
 from app.forms import Channel
 
+async def start_menu():
+    builder = InlineKeyboardBuilder()
+    builder.button(text="🗂 Channels", callback_data="channels_menu")
+    builder.button(text="💸 Ads", callback_data="ads_menu")
+    builder.adjust(1)
+    return builder.as_markup()
+
 async def channels_menu():
     CHANNELS = await get_channels()
     builder = InlineKeyboardBuilder()
+    builder.button(text="◀️ Leave", callback_data="leave")
     for key in CHANNELS.keys():
         days = len(CHANNELS[key]["posts"])//len(CHANNELS[key]["time"])
         if days < 30: emoji = "⚠️" 
@@ -21,13 +29,13 @@ async def post_menu(index: int, len: int):
     builder.button(text="❌", callback_data="disagree")
     builder.button(text=f"{index+1} / {len}", callback_data="other")
     builder.button(text="✅", callback_data="agree")
-    builder.button(text="◀️ Leave", callback_data="leave")
+    builder.button(text="◀️ Leave", callback_data="channels_menu")
     builder.adjust(1,1,3,1)
     return builder.as_markup()
 
 async def channel_menu():
     builder = InlineKeyboardBuilder()
-    builder.button(text="◀️ Leave", callback_data="leave")
+    builder.button(text="◀️ Leave", callback_data="channels_menu")
     builder.button(text="📝 Post generator", callback_data="parser_query")
     builder.button(text="🗓 Posts queue", callback_data="posts_queue")
     builder.button(text="⏰ Publication time", callback_data="publication_time")

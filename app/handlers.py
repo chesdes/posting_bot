@@ -43,7 +43,11 @@ try:
     @router.message(IsAdmin(), CommandStart())
     async def start_handler(msg: Message):
         await msg.delete()
-        await msg.answer(text="♦️ <b>Choose channel:</b>", reply_markup=await channels_menu())
+        await msg.answer(text="♦️ <b>Choose menu:</b>", reply_markup=await start_menu())
+    
+    @router.callback_query(IsAdmin(), F.data == "channels_menu")
+    async def channels_menu_handler(call: CallbackQuery):
+        await call.message.edit_text(text="♦️ <b>Choose channel:</b>", reply_markup=await channels_menu())
 
     @router.callback_query(IsAdmin(), ChannelCall())
     async def channel_call_handler(call: CallbackQuery, state: FSMContext):
@@ -294,7 +298,7 @@ try:
     async def post_leave_handler(call: CallbackQuery, state: FSMContext):
         await state.clear()
         await call.message.delete()
-        await call.message.answer(text="♦️ <b>Choose channel:</b>", reply_markup=await channels_menu())
+        await call.message.answer(text="♦️ <b>Choose menu:</b>", reply_markup=await start_menu())
 
     @router.message()
     async def other_msg_handler(msg: Message):
