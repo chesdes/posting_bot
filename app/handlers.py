@@ -3,7 +3,7 @@ from aiogram.types import Message, CallbackQuery, URLInputFile, InputMediaPhoto
 from aiogram.filters import CommandStart, Filter, Command
 from aiogram.fsm.context import FSMContext
 from aiogram.fsm.state import State, StatesGroup
-from app.utils import get_admins, get_channels, get_settings, check_time, check_index
+from app.utils import get_admins, get_masters, get_channels, get_settings, check_time, check_index
 from app.keyboards import *
 from app.scenario import agree_post
 from utils.parser import get_pinterest_images
@@ -26,7 +26,13 @@ class Wait(StatesGroup):
 class IsAdmin(Filter):
     async def __call__(self, msg: Message):
         ADMINS = await get_admins()
-        return msg.from_user.id in ADMINS
+        MASTERS = await get_masters()
+        return (msg.from_user.id in ADMINS) or (msg.from_user.id in MASTERS)
+
+class IsMaster(Filter):
+    async def __call__(self, msg: Message):
+        MASTERS = await get_masters()
+        return msg.from_user.id in MASTERS
 
 class ChannelCall(Filter):
     async def __call__(self, call: CallbackQuery):
@@ -40,11 +46,16 @@ class RemoveTimeCall(Filter):
 
 #handlers
 try:
+    @router.message(Command("id"))
+    async def id_coommand_handler(msg: Message):
+        await msg.delete()
+        await msg.answer(text=f"Your id: {msg.from_user.id}")
+
     @router.message(IsAdmin(), CommandStart())
     async def start_handler(msg: Message):
         await msg.delete()
         await msg.answer(text="♦️ <b>Choose menu:</b>", reply_markup=await start_menu())
-    
+
     @router.callback_query(IsAdmin(), F.data == "channels_menu")
     async def channels_menu_handler(call: CallbackQuery):
         await call.message.edit_text(text="♦️ <b>Choose channel:</b>", reply_markup=await channels_menu())
@@ -312,6 +323,7 @@ try:
     async def other_call_handler(call: CallbackQuery):
         await call.answer(text="In development...", show_alert=True)
 except Exception as ex:
+    print("ex")
     @router.callback_query()
     async def other_call_handler(call: CallbackQuery):
         await call.answer(text=f"Error: {ex}, write /start", show_alert=True)

@@ -5,6 +5,11 @@ async def get_admins() -> list:
         ADMINS = json.load(admins)
     return ADMINS
 
+async def get_masters() -> list:
+    with open('json/masters.json') as masters:
+        MASTERS = json.load(masters)
+    return MASTERS
+
 async def get_channels() -> dict:
     with open('json/channels.json') as channels:
         CHANNELS = json.load(channels)

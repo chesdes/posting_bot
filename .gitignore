@@ -2,6 +2,7 @@
 __pycache__/
 json/config.json
 json/admins.json
+json/masters.json
 json/channels.json
 temp/
 utils/har_and_cookies/
