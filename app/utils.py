@@ -1,3 +1,5 @@
+from datetime import datetime, timedelta
+from zoneinfo import ZoneInfo
 import json
 
 async def get_admins() -> list:
@@ -36,3 +38,26 @@ async def check_time(time: str) -> bool:
         if first < 24 and second < 60:
             return True
     return False
+
+def get_posting_time(time_arr: list, post_index: int):
+    MOSCOW_TZ = ZoneInfo("Europe/Moscow")
+    cur = datetime.now(MOSCOW_TZ)
+    arr = [datetime(year=cur.year, 
+                    month=cur.month, 
+                    day=cur.day, 
+                    hour=int(n.split(":")[0]), 
+                    minute=int(n.split(":")[1]),
+                    second=cur.second,
+                    microsecond=cur.microsecond,
+                    tzinfo=MOSCOW_TZ) for n in time_arr]
+    start_index = 0
+    index = 0
+    for j in arr:
+        if cur < j:
+            start_index = index
+            break
+        index += 1
+    m = (post_index-((post_index//len(time_arr)))*len(time_arr))+start_index
+    res_time = time_arr[m-((m//len(time_arr))*len(time_arr))]
+    post_day = (cur + timedelta(days=post_index//len(time_arr)))
+    return res_time, post_day.day, datetime.strptime(str(post_day.month), "%m").strftime("%b")

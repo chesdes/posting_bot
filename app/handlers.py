@@ -5,7 +5,7 @@ from aiogram.fsm.context import FSMContext
 from aiogram.fsm.state import State, StatesGroup
 from app.utils import get_admins, get_masters, get_channels, get_settings, check_time, check_index
 from app.keyboards import *
-from app.scenario import agree_post
+from app.scenario import *
 from utils.parser import get_pinterest_images
 from app.forms import Channel
 import asyncio
@@ -58,7 +58,11 @@ try:
 
     @router.callback_query(IsAdmin(), F.data == "channels_menu")
     async def channels_menu_handler(call: CallbackQuery):
-        await call.message.edit_text(text="♦️ <b>Choose channel:</b>", reply_markup=await channels_menu())
+        if call.message.photo:
+            await call.message.delete()
+            await call.message.answer(text="♦️ <b>Choose channel:</b>", reply_markup=await channels_menu())
+        else:
+            await call.message.edit_text(text="♦️ <b>Choose channel:</b>", reply_markup=await channels_menu())
 
     @router.callback_query(IsAdmin(), ChannelCall())
     async def channel_call_handler(call: CallbackQuery, state: FSMContext):
@@ -142,75 +146,19 @@ try:
 
     @router.callback_query(IsAdmin(), Wait.post_queue, F.data=="prev")
     async def prev_post_handler(call: CallbackQuery, state: FSMContext):
-        state_data = await state.get_data()
-        index = state_data["index"]
-        channel: Channel = state_data["channel"]
-        posts = await channel.posts
-        true_index = len(posts)+index
-        if true_index > 0:
-            channel: Channel = state_data["channel"]
-            posts = await channel.posts
-            index -= 1
-            await state.update_data(index=index)
-            await call.message.edit_media(media=InputMediaPhoto(media=posts[index]["id"],
-                                                                caption=posts[index]["caption"]), 
-                                        reply_markup=await posts_queue_menu(channel, index, posts))
-        else:
-            await call.answer(text="Error: Looks like the queue has changed")
+        await posts_queue_move(call=call, state=state, index_difference=-1)
 
     @router.callback_query(IsAdmin(), Wait.post_queue, F.data=="prev_10")
     async def prev_post_handler(call: CallbackQuery, state: FSMContext):
-        state_data = await state.get_data()
-        index = state_data["index"]
-        channel: Channel = state_data["channel"]
-        posts = await channel.posts
-        true_index = len(posts)+index
-        if true_index > 9:
-            channel: Channel = state_data["channel"]
-            posts = await channel.posts
-            index -= 10
-            await state.update_data(index=index)
-            await call.message.edit_media(media=InputMediaPhoto(media=posts[index]["id"],
-                                                                caption=posts[index]["caption"]), 
-                                        reply_markup=await posts_queue_menu(channel, index, posts))
-        else:
-            await call.answer(text="Error: Looks like the queue has changed")
+        await posts_queue_move(call=call, state=state, index_difference=-10)
 
     @router.callback_query(IsAdmin(), Wait.post_queue, F.data=="next")
     async def prev_post_handler(call: CallbackQuery, state: FSMContext):
-        state_data = await state.get_data()
-        index = state_data["index"]
-        channel: Channel = state_data["channel"]
-        posts = await channel.posts
-        true_index = len(posts)+index
-        if true_index < len(posts)-1:
-            channel: Channel = state_data["channel"]
-            posts = await channel.posts
-            index += 1
-            await state.update_data(index=index)
-            await call.message.edit_media(media=InputMediaPhoto(media=posts[index]["id"],
-                                                                caption=posts[index]["caption"]), 
-                                        reply_markup=await posts_queue_menu(channel, index, posts))
-        else:
-            await call.answer(text="Error: Looks like the queue has changed")
+        await posts_queue_move(call=call, state=state, index_difference=1)
 
     @router.callback_query(IsAdmin(), Wait.post_queue, F.data=="next_10")
     async def prev_post_handler(call: CallbackQuery, state: FSMContext):
-        state_data = await state.get_data()
-        index = state_data["index"]
-        channel: Channel = state_data["channel"]
-        posts = await channel.posts
-        true_index = len(posts)+index
-        if true_index < len(posts)-10:
-            channel: Channel = state_data["channel"]
-            posts = await channel.posts
-            index += 10
-            await state.update_data(index=index)
-            await call.message.edit_media(media=InputMediaPhoto(media=posts[index]["id"],
-                                                                caption=posts[index]["caption"]), 
-                                        reply_markup=await posts_queue_menu(channel, index, posts))
-        else:
-            await call.answer(text="Error: Looks like the queue has changed")
+        await posts_queue_move(call=call, state=state, index_difference=10)
 
     @router.callback_query(IsAdmin(), Wait.channel_menu, F.data == "publication_time")
     async def time_edit_handler(call: CallbackQuery, state: FSMContext):

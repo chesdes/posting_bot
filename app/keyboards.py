@@ -1,5 +1,5 @@
 from aiogram.utils.keyboard import InlineKeyboardBuilder
-from app.utils import get_channels
+from app.utils import get_channels, get_posting_time
 from app.forms import Channel
 
 async def start_menu():
@@ -44,10 +44,12 @@ async def channel_menu():
 
 async def posts_queue_menu(channel: Channel, index: int, posts: list):
     true_index = len(posts)+index
+    time, day, month = get_posting_time(await channel.time, true_index)
     builder = InlineKeyboardBuilder()
+    builder.button(text=f"⏰ {day} {month}, {time}", callback_data="other")
     builder.button(text="◀️ Leave", callback_data=channel.key)
     builder.button(text=f"{true_index+1}/{len(posts)}", callback_data="other")
-    adjust = [1,1,0]
+    adjust = [1,1,1,0]
     if true_index > 9:
         builder.button(text="⬅️🔟", callback_data="prev_10")
         adjust[len(adjust)-1] += 1
