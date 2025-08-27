@@ -7,11 +7,8 @@ from selenium.webdriver.support import expected_conditions as EC
 from webdriver_manager.chrome import ChromeDriverManager
 import time
 
-#############################################
-#                                           #
-#             CODE BY CHAT GPT              #
-#                                           #
-#############################################
+# The initial version of the function was created by Chat GPT 
+# and further edited by me after studying Selenium =]
 
 def get_pinterest_images(query: str, limit: int) -> list[str]:
     options = Options()

@@ -48,22 +48,27 @@ Built with **[aiogram 3.20](https://docs.aiogram.dev/)**.
 ## 🖼 Screenshots  
 
 - Channels menu / Меню выбора канала
+
   ![Channels menu](screenshots/channels_menu.png)
-  
+
   🇬🇧 55 is the number of posts in the queue ; 13 is the number of days they will last based on the publication time
   
   🇷🇺 55 - количество постов в очереди ; 13 - количество дней на которых их хватит исходя из времени публикации 
 
 - Channel menu / Меню канала
+
   ![Channel menu](screenshots/channel_menu.png)
 
 - Post generator / Меню генерации постов
+
   ![Post generator](screenshots/post_generator.png)  
 
-- Post queue / Очередь постов  
+- Post queue / Очередь постов
+
   ![Post queue](screenshots/post_queue.png)  
 
 - Publication time / Меню настройки времени публикации
+
   ![Publication time](screenshots/publication_time.png)
 
 ---
