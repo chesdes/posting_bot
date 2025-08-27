@@ -19,6 +19,7 @@ def get_pinterest_images(query: str, limit: int) -> list[str]:
     options.add_argument("--disable-gpu")
     options.add_argument("--no-sandbox")
     options.add_argument("--window-size=1920,1080")
+    options.add_argument("--incognito")
 
     driver = webdriver.Chrome(service=Service(ChromeDriverManager().install()), options=options)
 
