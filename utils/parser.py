@@ -1,61 +1,39 @@
-from selenium import webdriver
-from selenium.webdriver.chrome.service import Service
-from selenium.webdriver.common.by import By
-from selenium.webdriver.chrome.options import Options
-from selenium.webdriver.support.ui import WebDriverWait
-from selenium.webdriver.support import expected_conditions as EC
-from webdriver_manager.chrome import ChromeDriverManager
+from playwright.sync_api import sync_playwright
+from bs4 import BeautifulSoup
 import time
 
-# The initial version of the function was created by Chat GPT 
-# and further edited by me after studying Selenium =]
-
 def get_pinterest_images(query: str, limit: int) -> list[str]:
-    options = Options()
-    options.add_argument("--headless")
-    options.add_argument("--disable-gpu")
-    options.add_argument("--no-sandbox")
-    options.add_argument("--window-size=1920,1080")
-    options.add_argument("--incognito")
+    image_urls = []
+    max_scrolls = 50
 
-    driver = webdriver.Chrome(service=Service(ChromeDriverManager().install()), options=options)
+    with sync_playwright() as playwright:
+        browser = playwright.chromium.launch(headless=True)
+        context = browser.new_context()
+        page = context.new_page()
+        page.goto("https://www.pinterest.com/search/pins/?q=" + query.replace(" ", "%20"))
+        time.sleep(5)
 
-    try:
-        search_url = f"https://www.pinterest.com/search/pins/?q={query.replace(' ', '%20')}"
-        driver.get(search_url)
+        scrolls = 0
+        while len(image_urls) < limit and scrolls < max_scrolls:
+            html = page.inner_html('body')
+            soup = BeautifulSoup(html, 'lxml')
+            for img in soup.find_all('img'):
+                src = img.get('src')
+                if src and 'pinimg.com' in src and '/236x/' in src:
+                    full_src = src.replace("/236x/", "/originals/")
+                    if full_src not in image_urls:
+                        image_urls.append(full_src)
+                if len(image_urls) >= limit:
+                    break
 
-        wait = WebDriverWait(driver, 15)
-        wait.until(EC.presence_of_element_located((By.CSS_SELECTOR, 'img[srcset]')))
+            if len(image_urls) >= limit:
+                break
 
-        collected_urls = set()
-        scroll_attempts = 0
+            page.mouse.wheel(0, 4000)
+            time.sleep(2)
+            scrolls += 1
 
-        while len(collected_urls) < limit and scroll_attempts < 20:
-            img_elements = driver.find_elements(By.CSS_SELECTOR, 'img[srcset]')
-            for img in img_elements:
-                try:
-                    srcset = img.get_attribute("srcset")
-                    if not srcset:
-                        continue
+        context.close()
+        browser.close()
 
-                    entries = [
-                        (entry.strip().split(" ")[0], int(entry.strip().split(" ")[1][:-1]))
-                        for entry in srcset.split(",") if " " in entry
-                    ]
-                    if entries:
-                        best_url = max(entries, key=lambda x: x[1])[0]
-                        collected_urls.add(best_url)
-
-                        if len(collected_urls) >= limit:
-                            break
-                except Exception:
-                    continue
-
-            driver.execute_script("window.scrollBy(0, document.body.scrollHeight);")
-            time.sleep(1.5)
-            scroll_attempts += 1
-
-        return list(collected_urls)[:limit]
-
-    finally:
-        driver.quit()
+    return image_urls[:limit]
