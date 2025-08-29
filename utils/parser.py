@@ -40,11 +40,17 @@ def get_pinterest_images(query: str, limit: int) -> list[str]:
                         image_urls.append(full_src)
                 if len(image_urls) >= limit:
                     break
+
+            if len(image_urls) == 0:
+                end_time = time.time()
+                logger.info(f'Error. No pins were found, of query "{query}". ({end_time-start_time:.2f} seconds)')
+                return None
             
             if len(image_urls) >= limit:
                 end_time = time.time()
-                logger.info(f'parse finished ({end_time-start_time:.2f} seconds)')
+                logger.info(f'query "{query}" parse finished ({end_time-start_time:.2f} seconds)')
                 break
+
             check_time = time.time()
             logger.info(f'query "{query}" progress: {len(image_urls)}/{limit} ({check_time-start_time:.2f}s)')
 

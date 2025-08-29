@@ -219,11 +219,16 @@ async def parser_query_handler(msg: Message, state: FSMContext):
     await bot_msg.edit_text(text="📥 <b>Loading pins...</b>")
     SETTINGS = await get_settings()
     pins = await asyncio.to_thread(get_pinterest_images, msg.text, SETTINGS["pins_parse"])
-    await state.update_data(pins=pins, index=0)
-    await bot_msg.delete()
-    new_bot_msg = await msg.answer_photo(photo=URLInputFile(pins[0]), reply_markup= await post_menu(0, len(pins)))
-    await state.update_data(bot_message=new_bot_msg)
-    await state.set_state(Wait.post_generator)
+    if pins == None:
+        await state.clear()
+        await bot_msg.delete()
+        await msg.answer(text="Error. Please try another query. (write /start)")
+    else:
+        await state.update_data(pins=pins, index=0)
+        await bot_msg.delete()
+        new_bot_msg = await msg.answer_photo(photo=URLInputFile(pins[0]), reply_markup= await post_menu(0, len(pins)))
+        await state.update_data(bot_message=new_bot_msg)
+        await state.set_state(Wait.post_generator)
 
 @router.message(IsAdmin(), Wait.post_generator, Command("delete_caption"))
 async def remove_caption_handler(msg: Message, state: FSMContext):
