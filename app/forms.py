@@ -31,6 +31,17 @@ class Channel:
     async def days(self): 
         return len(await self.posts) // len(await self.time)
     
+    async def edit_id(self, new_id: int):
+        channels = await get_channels()
+        self.__id = new_id
+        channels[self.__key]["id"] = self.__id
+        await update_channels(channels)
+
+    async def delete(self):
+        channels = await get_channels()
+        channels.pop(self.__key)
+        await update_channels(channels)
+
     async def remove_time(self, index: int):
         channels = await get_channels()
         channels[self.__key]["time"].pop(index)

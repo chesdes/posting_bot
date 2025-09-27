@@ -98,6 +98,35 @@ async def channel_call_handler(call: CallbackQuery, state: FSMContext):
                                 reply_markup= await channel_menu())
     await state.update_data(channel=channel, bot_message=bot_msg)
 
+@router.message(IsMaster(), Wait.channel_menu, Command("new_id"))
+async def edit_channel_id_handler(msg: Message, state: FSMContext):
+    data = msg.text.split()
+    if len(data) == 2 and len(data[1]) == 14:
+        state_data : dict = await state.get_data()
+        chnl: Channel = state_data["channel"]
+        new_id = int(msg.text.split()[1])
+        channels = await get_channels()
+        if all(map(lambda x: channels[x]["id"] != new_id, channels.keys())):
+            await chnl.edit_id(new_id=new_id)
+            await msg.answer(text=f"<b>{chnl.key} ID successfully changed!</b>")
+        else:
+            await msg.answer(text="<b>Error. Channel with this ID already in the bot.</b>")
+    else:
+        await msg.answer(text="<b>Error. Invalid ID value</b>")
+
+@router.message(IsMaster(), Wait.channel_menu, Command("delete_channel"))
+async def delete_channel_handler(msg: Message, state: FSMContext):
+    state_data : dict = await state.get_data()
+    chnl: Channel = state_data["channel"]
+    data = msg.text.split()
+    if len(data) == 2 and data[1] == chnl.key:
+        bot_message: Message = state_data["bot_message"]
+        await bot_message.delete()
+        await chnl.delete()
+        await msg.answer(text=f"<b>{chnl.key} successfully deleted!</b>")
+    else:
+        await msg.answer(text=f"<b>To confirm the delete, write <code>/delete_channel {chnl.key}</code></b>")
+
 @router.callback_query(IsMaster(), Wait.new_channel_info, F.data == "confirm")
 async def confirm_info_handler(call: CallbackQuery, state: FSMContext):
     state_data : dict = await state.get_data()
