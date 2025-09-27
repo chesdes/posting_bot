@@ -209,9 +209,13 @@ async def delete_post_handler(call: CallbackQuery, state: FSMContext):
     await channel.delete_post(index)
     posts = await channel.posts
     await call.answer(text="Post was deleted")
+    if index == (len(posts)+1)*-1:
+        index += 1
+    await state.update_data(index=index)
     await call.message.edit_media(media=InputMediaPhoto(media=posts[index]["id"],
                                                             caption=posts[index]["caption"]), 
                                     reply_markup=await posts_queue_menu(channel, index, posts))
+    
 
 @router.callback_query(IsAdmin(), Wait.post_queue, F.data=="prev")
 async def prev_post_handler(call: CallbackQuery, state: FSMContext):
