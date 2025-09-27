@@ -1,5 +1,5 @@
 from aiogram.utils.keyboard import InlineKeyboardBuilder
-from app.utils import get_channels, get_posting_time
+from app.utils import get_channels, get_posting_time, get_masters
 from app.forms import Channel
 
 async def start_menu():
@@ -9,16 +9,26 @@ async def start_menu():
     builder.adjust(1)
     return builder.as_markup()
 
-async def channels_menu():
+async def confirm_info():
+    builder = InlineKeyboardBuilder()
+    builder.button(text="✅ Confirm", callback_data="confirm")
+    builder.button(text="❌ Cancel", callback_data="channels_menu")
+    builder.adjust(1)
+    return builder.as_markup()
+
+async def channels_menu(id: int):
     CHANNELS = await get_channels()
     builder = InlineKeyboardBuilder()
     builder.button(text="◀️ Leave", callback_data="leave")
     for key in CHANNELS.keys():
+        channels: Channel = Channel(key=key, id=CHANNELS[key]["id"])
         days = len(CHANNELS[key]["posts"])//len(CHANNELS[key]["time"])
-        if days < 30: emoji = "⚠️" 
+        if not await channels.check_perms(): emoji = "⛔️"
+        elif days < 30: emoji = "⚠️" 
         else: emoji = "✅" 
         builder.button(text=f"📣 {key} | {len(CHANNELS[key]['posts'])} ({days}d) {emoji}", callback_data=key)
-    builder.button(text="➕ Add channel", callback_data="add_channel")
+    if id in await get_masters():
+        builder.button(text="➕ Add channel", callback_data="add_channel")
     builder.adjust(1)
     return builder.as_markup()
 

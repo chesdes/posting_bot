@@ -21,8 +21,11 @@ class Channel:
     
     @property
     async def info(self):
-        info = await bot.get_chat(chat_id=self.__id)
-        return info
+        try:
+            info = await bot.get_chat(chat_id=self.__id)
+            return info
+        except:
+            return None
     
     @property
     async def days(self): 
@@ -54,3 +57,11 @@ class Channel:
         channels = await get_channels()
         channels[self.__key]["posts"].insert(new_index, channels[self.__key]["posts"].pop(old_index))
         await update_channels(channels)
+
+    async def check_perms(self):
+        bot_user = await bot.get_me()
+        try:
+            admins = await bot.get_chat_administrators(chat_id=self.__id)
+            return any(map(lambda x: x.user.id == bot_user.id and x.can_post_messages and x.can_delete_messages, admins))
+        except:
+            return False

@@ -23,6 +23,7 @@ class Wait(StatesGroup):
     post_generator = State()
     channel_time_edit = State()
     post_queue = State()
+    new_channel_info = State()
 
 #filters
 class IsAdmin(Filter):
@@ -59,7 +60,8 @@ async def id_coommand_handler(msg: Message):
     await msg.answer(text=f"Your id: {msg.from_user.id}")
 
 @router.message(IsAdmin(), CommandStart())
-async def start_handler(msg: Message):
+async def start_handler(msg: Message, state: FSMContext):
+    await state.clear()
     await msg.delete()
     await msg.answer(text="♦️ <b>Choose menu:</b>", reply_markup=await start_menu())
 
@@ -68,12 +70,13 @@ async def session_expired_handler(call: CallbackQuery):
     await call.answer(text="Session expired, write /start", show_alert=True)
 
 @router.callback_query(IsAdmin(), F.data == "channels_menu")
-async def channels_menu_handler(call: CallbackQuery):
+async def channels_menu_handler(call: CallbackQuery, state: FSMContext):
+    await state.clear()
     if call.message.photo:
         await call.message.delete()
-        await call.message.answer(text="♦️ <b>Choose channel:</b>", reply_markup=await channels_menu())
+        await call.message.answer(text="♦️ <b>Choose channel:</b>", reply_markup=await channels_menu(id=call.from_user.id))
     else:
-        await call.message.edit_text(text="♦️ <b>Choose channel:</b>", reply_markup=await channels_menu())
+        await call.message.edit_text(text="♦️ <b>Choose channel:</b>", reply_markup=await channels_menu(id=call.from_user.id))
 
 @router.callback_query(IsAdmin(), ChannelCall())
 async def channel_call_handler(call: CallbackQuery, state: FSMContext):
@@ -83,10 +86,65 @@ async def channel_call_handler(call: CallbackQuery, state: FSMContext):
     chnl = channels[call.data]
     channel = Channel(key=call.data, id=chnl["id"])
     info = await channel.info
+    if info != None:
+        info_text = f"📌 <b>{info.full_name}</b> - <b>@{info.username}</b>\n🆔 <code>{channel.id}</code>"
+    else:
+        info_text = f"📌 <b> {channel.key} </b>\n🆔 <code>{channel.id}</code>"
     await call.message.delete()
-    bot_msg = await call.message.answer(text=f"📌 <b>{info.full_name}</b> - <b>@{info.username}</b>\n<b>✅ Post ready:</b> {len(await channel.posts)} ({await channel.days}d)\n\n♦️ <b>Choose option:</b>", 
+    false_perms = ""
+    if not await channel.check_perms(): false_perms = "\n⛔️ <b>The bot can't post in the channel. Give him admin rights.</b>\n"
+    text = f"{info_text}\n\n<b>✅ Post ready:</b> {len(await channel.posts)} ({await channel.days}d)\n{false_perms}\n♦️ <b>Choose option:</b>"
+    bot_msg = await call.message.answer(text=text, 
                                 reply_markup= await channel_menu())
     await state.update_data(channel=channel, bot_message=bot_msg)
+
+@router.callback_query(IsMaster(), Wait.new_channel_info, F.data == "confirm")
+async def confirm_info_handler(call: CallbackQuery, state: FSMContext):
+    state_data : dict = await state.get_data()
+    cId, cKey, cTime = state_data["cId"], state_data["cKey"], state_data["cTime"]
+    channels = await get_channels()
+    if not (cKey in channels):
+        if all(map(lambda x: channels[x]["id"] != cId, channels.keys())):
+            channels[cKey] = {
+                "id": cId,
+                "time": cTime,
+                "posts": []
+            }
+            await update_channels(channels)
+            await call.answer("The channel is connected to the bot")
+            await call.message.edit_text(text="♦️ <b>Choose channel:</b>", reply_markup=await channels_menu(id=call.from_user.id))
+        else:
+            await call.answer("Error. Channel with this ID already in the bot.", show_alert=True)
+    else:
+        await call.answer("Error. Channel with this KEY already in the bot.", show_alert=True)
+
+@router.message(IsMaster(), Wait.new_channel_info)
+async def channel_info_handler(msg: Message, state: FSMContext):
+    state_data = await state.get_data()
+    bot_msg: Message = state_data["bot_message"]
+    data: list[str] = msg.text.split("\n")
+    await msg.delete()
+    try:
+        cId, cKey, cTime = data[:3]
+        cTime = cTime.replace(" ", "").split(",")
+        text = ("📝<b>Check the correctness of the entered data:</b>\n"+
+               f"\n<b>ID:</b> {cId}\n<b>KEY:</b> {cKey}\n<b>POSTING TIME:</b> {', '.join(cTime)}")
+        await bot_msg.edit_text(text=text, reply_markup=await confirm_info())
+        await state.update_data(cId=int(cId), cKey=cKey, cTime=cTime)
+    except ValueError:
+        pass
+
+@router.callback_query(IsMaster(), F.data == "add_channel")
+async def add_channel_handler(call: CallbackQuery, state: FSMContext):
+    await call.message.delete()
+    await state.set_state(Wait.new_channel_info)
+    text = ("♦️<b>For add channel in posting bot, write the following data:</b>\n"+
+            "- channel id\n- channel key\n- posting time\n"+
+            "\n🧾<b>Example:</b>\n"+
+            "-1002896777542\nkittens\n07:00, 12:00, 17:00, 22:00")
+    bot_message = await call.message.answer(text=text)
+    await state.update_data(bot_message=bot_message)
+    await call.answer()
 
 @router.callback_query(IsAdmin(), Wait.channel_menu, F.data == "posts_queue")
 async def post_queue_handler(call: CallbackQuery, state: FSMContext):
@@ -255,7 +313,7 @@ async def post_agree_handler(call: CallbackQuery, state: FSMContext):
     else:
         await state.clear()
         await call.message.delete()
-        await call.message.answer(text="♦️ <b>Choose channel:</b>", reply_markup=await channels_menu())
+        await call.message.answer(text="♦️ <b>Choose channel:</b>", reply_markup=await channels_menu(id=call.from_user.id))
 
 @router.callback_query(IsAdmin(), F.data == "disagree", Wait.post_generator)
 async def post_disagree_handler(call: CallbackQuery, state: FSMContext):
@@ -267,7 +325,7 @@ async def post_disagree_handler(call: CallbackQuery, state: FSMContext):
     else:
         await state.clear()
         await call.message.delete()
-        await call.message.answer(text="♦️ <b>Choose channel:</b>", reply_markup=await channels_menu())
+        await call.message.answer(text="♦️ <b>Choose channel:</b>", reply_markup=await channels_menu(id=call.from_user.id))
 
 @router.callback_query(IsAdmin(), F.data == "leave")
 async def post_leave_handler(call: CallbackQuery, state: FSMContext):
@@ -285,4 +343,4 @@ async def other_call_handler(call: CallbackQuery):
 
 @router.callback_query()
 async def other_call_handler(call: CallbackQuery):
-    await call.answer(text="In development...", show_alert=True)
+    await call.answer(text="In development... (OR you dont have permissions)", show_alert=True)
