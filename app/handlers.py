@@ -53,11 +53,20 @@ class SessionExpired(Filter):
         msg_time = call.message.date
         return (time - msg_time).days >= 1
 
+class ForwardedChannelMessage(Filter):
+    async def __call__(self, msg: Message):
+        return msg.forward_from_chat is not None and msg.forward_from_chat.type == "channel"
+
 #handlers
 @router.message(Command("id"))
 async def id_coommand_handler(msg: Message):
     await msg.delete()
     await msg.answer(text=f"Your id: {msg.from_user.id}")
+
+@router.message(ForwardedChannelMessage())
+async def forwarded_message_handler(msg: Message):
+        channel_id = msg.forward_from_chat.id
+        await msg.answer(f"<b>channel ID:</b> <code>{channel_id}</code>")
 
 @router.message(IsAdmin(), CommandStart())
 async def start_handler(msg: Message, state: FSMContext):
