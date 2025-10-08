@@ -28,6 +28,7 @@ Built with **[aiogram 3.x](https://docs.aiogram.dev/)**.
 - ⏰ Automatic post publishing on schedule.  
 - 🗓 Flexible publishing time settings (e.g., `07:00`, `12:00`, `17:00`, `22:00`).  
 - 📂 Manage the post queue in **Post queue** menu (remove or reorder posts).  
+- 🪄 Generating a post caption using **GigaChat**
 
 ---
 
@@ -41,7 +42,8 @@ Built with **[aiogram 3.x](https://docs.aiogram.dev/)**.
 - ⚡️ Удобный режим **Post generator** — за час можно создать более 100 постов.  
 - ⏰ Автопубликация постов по расписанию.  
 - 🗓 Гибкая настройка времени публикации (например, `07:00`, `12:00`, `17:00`, `22:00`).  
-- 📂 Просмотр очереди постов в меню **Post queue** (можно удалить или изменить порядок).  
+- 📂 Просмотр очереди постов в меню **Post queue** (можно удалить или изменить порядок). 
+- 🪄 Генерация подписи поста с помощью **GigaChat**
 
 ---
 
