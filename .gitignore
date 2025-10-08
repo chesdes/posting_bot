@@ -4,6 +4,6 @@ json/config.json
 json/admins.json
 json/masters.json
 json/channels.json
-temp/
+temp/*
 utils/har_and_cookies/
 .DS_STORE

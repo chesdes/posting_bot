@@ -7,6 +7,7 @@ from app.utils import get_admins, get_masters, get_channels, get_settings, check
 from app.keyboards import *
 from app.scenario import *
 from utils.parser import get_pinterest_images
+from app.init_giga import giga
 from app.forms import Channel
 from datetime import datetime
 from zoneinfo import ZoneInfo
@@ -343,6 +344,21 @@ async def post_caption_handler(msg: Message, state: FSMContext):
     state_data = await state.get_data()
     bot_msg = state_data["bot_message"]
     await bot_msg.edit_caption(caption=msg.text, reply_markup= await post_menu(state_data["index"], len(state_data["pins"])))
+
+@router.callback_query(IsAdmin(), Wait.post_generator, F.data == "ai_generate")
+async def ai_generate_handler(call: CallbackQuery, state: FSMContext):
+    await call.answer(text="Generating...")
+    state_data = await state.get_data()
+    bot_msg = state_data["bot_message"]
+    SETTINGS = await get_settings()
+    prompt: str = SETTINGS["prompt"]
+    channel: Channel = state_data["channel"]
+    info = await channel.info
+    if info != None:
+        caption = await giga.chat(prompt.format(channel_name=info.full_name))
+    else:
+        caption = await giga.chat(prompt.format(channel_name=channel.key))
+    await bot_msg.edit_caption(caption=caption, reply_markup= await post_menu(state_data["index"], len(state_data["pins"])))
 
 @router.callback_query(IsAdmin(), F.data == "agree", Wait.post_generator)
 async def post_agree_handler(call: CallbackQuery, state: FSMContext):

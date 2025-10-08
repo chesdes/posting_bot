@@ -36,11 +36,12 @@ async def post_menu(index: int, len: int):
     builder = InlineKeyboardBuilder()
     builder.button(text="♦️ To add a caption, write it in the chat", callback_data="other")
     builder.button(text='♦️ To delete a caption, write "/delete_caption"', callback_data="other")
+    builder.button(text="🪄 Generate caption (beta)", callback_data="ai_generate")
     builder.button(text="❌", callback_data="disagree")
     builder.button(text=f"{index+1} / {len}", callback_data="other")
     builder.button(text="✅", callback_data="agree")
     builder.button(text="◀️ Leave", callback_data="channels_menu")
-    builder.adjust(1,1,3,1)
+    builder.adjust(1,1,1,3,1)
     return builder.as_markup()
 
 async def channel_menu():
