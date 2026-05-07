@@ -1,3 +1,5 @@
+![Work illustration](screenshots/posting_bot.png)  
+
 # Posting Bot  
 
 🇬🇧 A Telegram bot for easily creating posts with pictures from Pinterest and automatically publishing them in channels. (For example, themed ones, such as channels with kittens)
